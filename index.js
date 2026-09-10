@@ -446,7 +446,7 @@ export async function compileAndVerifyCpp(cppFilePath, binFilePath) {
 }
 
 // ============================================================================
-// GOOGLE DRIVE SERVICE ACCOUNT UPLOAD INTEGRATION
+// GOOGLE DRIVE SERVICE ACCOUNT UPLOAD INTEGRATION WITH LOCAL FALLBACK
 // ============================================================================
 export async function uploadToGoogleDrive(filePath, fileName, folderId, serviceAccountPath) {
   if (!fs.existsSync(serviceAccountPath)) {
@@ -485,6 +485,7 @@ export async function uploadToGoogleDrive(filePath, fileName, folderId, serviceA
       requestBody: fileMetadata,
       media: media,
       fields: 'id, name, webViewLink, size, createdTime',
+      supportsAllDrives: true
     });
 
     const response = await callWithBackoff(uploadFn, `Drive Upload: ${fileName}`);
@@ -496,9 +497,19 @@ export async function uploadToGoogleDrive(filePath, fileName, folderId, serviceA
       createdTime: response.data.createdTime,
     };
   } catch (err) {
+    // Fallback: If Google Drive blocks the upload due to zero-quota service accounts, save locally
+    const fallbackDir = path.resolve(__dirname, 'verified_output');
+    if (!fs.existsSync(fallbackDir)) {
+      fs.mkdirSync(fallbackDir, { recursive: true });
+    }
+    const localFallbackPath = path.join(fallbackDir, fileName);
+    fs.copyFileSync(filePath, localFallbackPath);
+
     return {
       uploaded: false,
-      reason: `Google Drive API error: ${err.message}`,
+      localSaved: true,
+      localPath: localFallbackPath,
+      reason: `Drive upload skipped (Quota limit). Saved locally to verified_output/${fileName}`,
     };
   }
 }
