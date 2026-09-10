@@ -1,0 +1,6 @@
+{
+  "name": "Pre-Silicon FIFO Testbench Pipeline",
+  "description": "Autonomous verification pipeline using @google/genai to generate, validate, and compile self-checking C++ testbenches for an 8-bit Synchronous FIFO with Drive upload.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
